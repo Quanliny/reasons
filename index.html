@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雅思/托福 · 多色横向导航 + 双语思维导图</title>
+    <style>
+        /* ----- 全局变量 & 基础样式 ----- */
+        :root {
+            --primary-color: #2563eb;
+            --primary-light: #dbeafe;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #334155;
+            --text-light: #64748b;
+            --border-light: #e2e8f0;
+            --highlight: #fef9c3;
+            --success-border: #22c55e;   /* 用户笔记左侧边框色 */
+            --danger: #ef4444;
+            --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 多色背景类 (用于核心论点卡片) */
+        .branch-color-0 { background-color: #f0f7ff; } /* 浅蓝 */
+        .branch-color-1 { background-color: #f0fdf4; } /* 浅绿 */
+        .branch-color-2 { background-color: #fff7ed; } /* 浅橙 */
+        .branch-color-3 { background-color: #fef9c3; } /* 浅黄 */
+        .branch-color-4 { background-color: #f3e8ff; } /* 浅紫 */
+        .branch-color-5 { background-color: #ffe4e6; } /* 浅粉 */
+
+        /* 用户添加的卡片：保留绿色左边框，背景由颜色类决定 */
+        .branch-card.user-added {
+            border-left: 8px solid var(--success-border) !important;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            background: var(--card-bg);
+            padding: 20px 20px 16px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+        h1 { margin: 0 0 6px 0; color: var(--primary-color); font-size: 1.9rem; font-weight: 600; }
+        p.subtitle { color: var(--text-light); margin: 0 0 16px 0; font-size: 0.95rem; }
+
+        .controls {
+            display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            padding: 10px 18px; width: 300px; border: 2px solid var(--border-light);
+            border-radius: 40px; font-size: 14px; outline: none; transition: all 0.2s;
+            background-color: white;
+        }
+        input[type="text"]:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        button {
+            padding: 8px 20px; border: none; border-radius: 40px; cursor: pointer;
+            font-weight: 500; transition: all 0.15s; color: white; font-size: 13px;
+            box-shadow: var(--shadow-sm);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+        .btn-word { background-color: #1e3a5f; }
+        .btn-pdf { background-color: #b91c1c; }
+        .btn-backup { background-color: #0d9488; }
+        .btn-reset { background-color: #475569; }
+
+        /* ----- 横向话题导航栏 ----- */
+        .topic-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 28px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 60px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+        }
+        .topic-tab {
+            background: #f1f5f9;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            box-shadow: none;
+            color: var(--text-main);
+        }
+        .topic-tab:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .topic-tab.active {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(37,99,235,0.3);
+        }
+
+        /* 话题卡片 (现在只显示一个) */
+        .topic-card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            overflow: visible;
+            border: 1px solid var(--border-light);
+        }
+
+        .topic-header {
+            background: #f8fafc;
+            padding: 18px 24px;
+            font-weight: 600;
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-light);
+            border-radius: 28px 28px 0 0;
+        }
+
+        .topic-content { padding: 24px; background: #ffffff; }
+
+        /* ----- 横向分支容器 (核心论点并排) ----- */
+        .topic-branches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .branch-card {
+            flex: 1 1 300px;
+            min-width: 280px;
+            border: 1px solid #edf2f7;
+            border-radius: 24px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: all 0.1s ease;
+            align-self: flex-start;
+        }
+        .branch-card:hover { border-color: #cbd5e1; filter: brightness(0.98); }
+
+        .node-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .node-text {
+            flex: 1;
+            font-size: 1rem;
+        }
+        .node-text strong {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+        .en-text {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 5px;
+            font-style: normal;
+            font-weight: 400;
+            line-height: 1.4;
+            border-left: 2px solid var(--primary-light);
+            padding-left: 10px;
+        }
+
+        /* 纵向子节点树 (保持中性浅灰) */
+        ul.tree {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 16px 0 8px 0;
+        }
+        ul.tree li {
+            position: relative;
+            margin-bottom: 10px;
+            padding: 14px 16px;
+            background-color: #f9fbfe;
+            border: 1px solid #e9edf2;
+            border-radius: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            list-style: none;
+        }
+        ul.tree li::before { content: none; }
+        ul.tree ul.tree {
+            margin-left: 20px;
+            margin-top: 12px;
+        }
+        ul.tree ul.tree li {
+            background-color: #f6f9fc;
+            border-color: #dde3ea;
+        }
+
+        .delete-btn {
+            color: var(--danger);
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #fee2e2;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s;
+            font-weight: 500;
+            line-height: 1;
+            backdrop-filter: blur(2px);
+            flex-shrink: 0;
+        }
+        .branch-card:hover .delete-btn,
+        li:hover .delete-btn { opacity: 0.9; }
+        .delete-btn:hover { background: #fee2e2; }
+
+        /* 添加区域 */
+        .add-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--border-light);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .add-btn {
+            background-color: var(--primary-color);
+            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 40px;
+        }
+        .input-mini {
+            padding: 10px 14px;
+            border: 2px solid var(--border-light);
+            border-radius: 30px;
+            font-size: 14px;
+            background: white;
+            transition: 0.15s;
+        }
+        .input-mini:focus { border-color: var(--primary-color); outline: none; }
+        .input-cn { width: 160px; }
+        .input-en { width: 160px; }
+        .input-detail { width: 240px; }
+        .save-mini {
+            background-color: #059669;
+            padding: 10px 20px;
+            border-radius: 40px;
+        }
+
+        mark {
+            background-color: var(--highlight);
+            color: #854d0e;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: 500;
+            border: 1px solid #fde047;
+        }
+
+        .no-result {
+            text-align: center;
+            color: var(--text-light);
+            padding: 40px;
+            font-size: 1.2rem;
+            background: white;
+            border-radius: 40px;
+            display: none;
+        }
+
+        @media print {
+            .topic-nav, .controls, .add-section, .delete-btn { display: none !important; }
+            .topic-card { break-inside: avoid; border: 1px solid #000; }
+            .topic-content { display: block !important; }
+            .branch-card { border: 1px solid #000; page-break-inside: avoid; background: white !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎨 多色横向导航 · 双语思维导图</h1>
+        <p class="subtitle">核心论点卡片按索引循环柔和色系 · 用户笔记左侧绿边 · 子节点中性灰</p>
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="搜索中文/英文...">
+            <button class="btn-reset" onclick="resetSearch()">重置</button>
+            <button class="btn-backup" onclick="exportFullHTML()">📥 备份全部</button>
+            <button class="btn-word" onclick="exportWord()">📄 导出Word</button>
+            <button class="btn-pdf" onclick="window.print()">🖨️ 打印</button>
+        </div>
+    </header>
+
+    <!-- 横向话题导航栏 (动态生成) -->
+    <div class="topic-nav" id="topicNav"></div>
+
+    <!-- 当前话题内容将渲染在此 -->
+    <div id="contentArea"></div>
+    <div id="noResult" class="no-result">未找到匹配的内容</div>
+</div>
+
+<script>
+    // ------------------------------------------------------------
+    // 1. 原始静态数据 (与上一版相同，已拆分细节为子节点)
+    // ------------------------------------------------------------
+    const rawStaticData = [
+        {
+            id: "t1", title: "1. 教育 + 个人提升 (Education & Personal Improvement)",
+            content: [
+                { t: "教育的三大支柱", e: "Three Pillars of Education", children: [
+                    { t: "获取知识", e: "Acquiring Knowledge", children: [
+                        { t: "扩展视野", e: "Broadening Horizons", detail: "学习多样化学科; 增强通识与世界理解" },
+                        { t: "职业发展", e: "Career Development", detail: "获得专业技能与学历; 名校背景优势; 高薪工作与生活水平提升" },
+                        { t: "思维训练", e: "Mental Training", detail: "培养想象力与创造力; 逻辑思维; 多角度分析问题" }
+                    ]},
+                    { t: "培养道德品质", e: "Moral Development", children: [
+                        { t: "明辨是非", e: "Distinguishing Right from Wrong", detail: "学习行为准则; 培养责任感" },
+                        { t: "行为规范", e: "Behavioral Standards", detail: "校规约束不良行为; 寓言故事教导美德" },
+                        { t: "礼仪教养", e: "Etiquette & Manners", detail: "课堂传授良好举止; 不打断他人、礼貌表达" }
+                    ]},
+                    { t: "提升关键技能", e: "Skill Enhancement", children: [
+                        { t: "社交与沟通", e: "Social & Communication Skills", detail: "人际交往技巧; 有效合作; 换位思考; 职场人脉建立" },
+                        { t: "解决问题能力", e: "Problem-Solving Skills", detail: "筛选有用信息; 快速理解与利用; 高效解决" },
+                        { t: "生活自理能力", e: "Life Skills", detail: "基本清洁与维修; 实现独立" },
+                        { t: "时间管理", e: "Time Management", detail: "提高效率; 平衡工作与生活" }
+                    ]}
+                ]},
+                { t: "个人提升与健康", e: "Personal Improvement & Health", children: [
+                    { t: "身体健康", e: "Physical Health", detail: "规律运动增强体质; 预防疾病; 燃烧卡路里; 提高身体机能" },
+                    { t: "心理健康", e: "Mental Health", detail: "释放内啡肽和多巴胺; 缓解压力; 培养积极生活态度" }
+                ]}
+            ]
+        },
+        {
+            id: "t2", title: "2. 科技 + 媒体 (Technology & Media)",
+            content: [
+                { t: "科技的积极影响", e: "Pros of Technology", children: [
+                    { t: "交流与社交", e: "Communication & Socializing", detail: "智能手机兴起; 维持远距离关系; 提供发声平台" },
+                    { t: "知识获取", e: "Access to Knowledge", detail: "触手可及; 实时更新; 经济实惠" },
+                    { t: "工作效率", e: "Work Efficiency", detail: "远程办公; 节省通勤时间; 提高生产力" },
+                    { t: "网上购物", e: "Online Shopping", detail: "选择多样; 价格更低; 配送高效" }
+                ]},
+                { t: "科技的消极影响", e: "Cons of Technology", children: [
+                    { t: "隐私侵犯", e: "Privacy Invasion", detail: "数据滥用; 身份盗窃; 需平衡进步与隐私" },
+                    { t: "暴力信息泛滥", e: "Proliferation of Violent Information", detail: "对现实暴力脱敏; 增加暴力行为可能性" },
+                    { t: "身心健康问题", e: "Physical & Mental Health", detail: "久坐成瘾; 视力受损; 社交孤立; 沉迷虚拟世界" }
+                ]},
+                { t: "电视与电影", e: "TV & Cinema", children: [
+                    { t: "积极作用", e: "Pros", detail: "增长见识; 放松身心; 增强文化认同; 促进家庭关系" }
+                ]},
+                { t: "广告", e: "Advertising", children: [
+                    { t: "积极作用", e: "Pros", detail: "信息透明; 刺激经济; 公益广告提升意识" },
+                    { t: "消极作用", e: "Cons", detail: "误导价值观; 虚假宣传; 推广不健康生活方式" }
+                ]},
+                { t: "新闻媒体弊端", e: "Cons of News Media", children: [
+                    { t: "追逐利润", e: "Seeking Profit", detail: "制造假新闻; 信息不可靠" },
+                    { t: "政治压力", e: "Political Pressure", detail: "受政府控制; 限制批评曝光" }
+                ]}
+            ]
+        },
+        {
+            id: "t3", title: "3. 文化 + 历史 (Culture & History)",
+            content: [
+                { t: "学习不同文化的好处", e: "Benefits of Learning Different Cultures", detail: "减少误解与冲突; 开阔视野与创新思维; 培养同理心" },
+                { t: "投资艺术项目的意义", e: "Investment in Art Projects", detail: "保护文化多样性; 增强民族归属感; 促进经济与旅游; 丰富文化生活" },
+                { t: "博物馆的独特价值", e: "Unique Value of Museums", detail: "地标与经济贡献; 文化传承; 第一手多感官体验; 信息真实性" },
+                { t: "学习历史的作用", e: "Role of Learning History", detail: "以史为鉴 (避免重蹈覆辙); 增强民族认同" },
+                { t: "国际旅游体验文化", e: "International Tourism", detail: "纠正刻板印象; 真实了解他国; 减少冲突" }
+            ]
+        },
+        {
+            id: "t4", title: "4. 工作 + 城市 (Work & Cities)",
+            content: [
+                { t: "城市与农村的区别", e: "Cities vs. Countryside", detail: "基础设施差异; 就业与生活水平; 生活节奏; 人际关系与性格" },
+                { t: "城市化的问题", e: "Problems of Urbanization", detail: "环境恶化; 住房危机; 交通拥堵; 犯罪率上升; 社区凝聚力下降" },
+                { t: "解决方法", e: "Solutions", detail: "发展乡村经济; 城市扩张与基建投入" },
+                { t: "现代工作压力", e: "Modern Work Stress", detail: "快节奏与竞争激烈; 难以平衡生活; 忽视小确幸; 科技导致的信息轰炸" }
+            ]
+        },
+        {
+            id: "t5", title: "5. 政府 (Government)",
+            content: [
+                { t: "财政收入分配优先级", e: "Priority of Budget Allocation", children: [
+                    { t: "优先公共服务", e: "Prioritize public services", detail: "教育、医疗、交通、住房" },
+                    { t: "具体投资回报", e: "Specific Returns", detail: "教育提高就业; 医疗促进稳定; 交通提高效率" }
+                ]},
+                { t: "政府职能与手段", e: "Government Functions & Tools", children: [
+                    { t: "税收", e: "Taxation", detail: "财富再分配; 规范行为 (烟酒重税)" },
+                    { t: "奖励与补贴", e: "Incentives & Subsidies", detail: "提供经济激励; 投资特定行业" },
+                    { t: "立法", e: "Legislation", detail: "规范公民行为; 震慑不良行为; 维护社会稳定" },
+                    { t: "宣传", e: "Awareness Campaigns", detail: "提高环保意识; 减轻污染" }
+                ]}
+            ]
+        },
+        {
+            id: "t6", title: "6. 老龄化 (Ageing Population)",
+            content: [
+                { t: "人口老龄化的坏处", e: "Disadvantages", children: [
+                    { t: "劳动力短缺", e: "Shortage of young workers", detail: "威胁经济发展; 缺乏创新活力" },
+                    { t: "社会福利压力", e: "Strain on social welfare", detail: "医疗系统压力; 养老金负担" },
+                    { t: "生产力问题", e: "Productivity issues", detail: "工作节奏慢; 技术适应难" }
+                ]},
+                { t: "人口老龄化的好处", e: "Advantages", detail: "健康状况改善; 经验与智慧 (担任顾问); 性格成熟稳重" },
+                { t: "解决对策", e: "Solutions", detail: "鼓励延迟退休; 鼓励储蓄与养老金计划; 降低照顾成本" }
+            ]
+        },
+        {
+            id: "t7", title: "7. 职业女性 (Working Women)",
+            content: [
+                { t: "女性进入职场的好处", e: "Benefits of Hiring Women", children: [
+                    { t: "特定行业表现更佳", e: "Outperform in some industries", detail: "具备同情心; 适合护理与早教" },
+                    { t: "促进创新与收入", e: "Promote innovation & Revenue", detail: "多样化劳动力; 提供不同观点; 服务更广人群" },
+                    { t: "打破性别成见", e: "Break sex stereotypes", detail: "展示能力; 缩小收入差距" }
+                ]},
+                { t: "女性在职场的挑战", e: "Challenges", children: [
+                    { t: "雇主偏见", e: "Employer bias", detail: "缺乏尊重; 晋升困难" },
+                    { t: "对工作投入的担忧", e: "Doubts about commitment", detail: "担心产假; 家庭事务牵绊" }
+                ]}
+            ]
+        },
+        {
+            id: "t8", title: "8. 犯罪 (Crime)",
+            content: [
+                { t: "犯罪的原因", e: "Causes of Crime", children: [
+                    { t: "贫困与失业", e: "Poverty & Unemployment", detail: "无收入来源; 为谋生犯罪" },
+                    { t: "贫富差距", e: "Widening gap", detail: "心生不满; 宣泄愤怒" },
+                    { t: "家庭疏忽", e: "Negligent parents", detail: "未学习行为规范; 不良行为演变为犯罪" },
+                    { t: "媒体暴力影响", e: "Exposure to violence", detail: "视暴力为解决方式; 忽略后果" }
+                ]},
+                { t: "预防与减少犯罪的方法", e: "Methods to Reduce Crime", children: [
+                    { t: "刑罚", e: "Prison sentence", detail: "震慑作用; 失去自由恐惧" },
+                    { t: "教育", e: "Education", detail: "提升技能; 教授行为规范; 增加就业机会" },
+                    { t: "社区服务", e: "Community service", detail: "培养责任感; 防止再犯" }
+                ]},
+                { t: "改造与惩罚的对比", e: "Reform vs. Punishment", detail: "监禁 (隔离社会); 教育培训 (融入社会); 社区服务 (做贡献)" }
+            ]
+        }
+    ];
+
+    // 拆分detail为子节点的函数 (与上一版相同)
+    function splitDetailIntoNodes(node) {
+        if (!node.detail || node.children) return node;
+        const phrases = node.detail.split(/[;；]\s*/).filter(p => p.trim() !== '');
+        if (phrases.length === 0) return node;
+
+        const map = {
+            '智能手机兴起': 'Rise of smartphones',
+            '维持远距离关系': 'Maintain long-distance relationships',
+            '提供发声平台': 'Provide a platform for voices',
+            '触手可及': 'Information at your fingertips',
+            '实时更新': 'Real-time updates',
+            '经济实惠': 'Cost-effective',
+            '远程办公': 'Remote work',
+            '节省通勤时间': 'Save commuting time',
+            '提高生产力': 'Increase productivity',
+            '选择多样': 'Wide selection',
+            '价格更低': 'Lower prices',
+            '配送高效': 'Efficient delivery',
+            '数据滥用': 'Data misuse',
+            '身份盗窃': 'Identity theft',
+            '需平衡进步与隐私': 'Need to balance progress and privacy',
+            '对现实暴力脱敏': 'Desensitization to real violence',
+            '增加暴力行为可能性': 'Increase likelihood of violent behavior',
+            '久坐成瘾': 'Sedentary addiction',
+            '视力受损': 'Vision damage',
+            '社交孤立': 'Social isolation',
+            '沉迷虚拟世界': 'Indulgence in virtual world',
+            '增长见识': 'Broaden knowledge',
+            '放松身心': 'Relax body and mind',
+            '增强文化认同': 'Enhance cultural identity',
+            '促进家庭关系': 'Promote family bonds',
+            '信息透明': 'Information transparency',
+            '刺激经济': 'Stimulate economy',
+            '公益广告提升意识': 'Public service ads raise awareness',
+            '误导价值观': 'Misleading values',
+            '虚假宣传': 'False advertising',
+            '推广不健康生活方式': 'Promote unhealthy lifestyles',
+            '制造假新闻': 'Fake news production',
+            '信息不可靠': 'Unreliable information',
+            '受政府控制': 'Government control',
+            '限制批评曝光': 'Limit exposure of criticism',
+            '学习多样化学科': 'Study diverse subjects',
+            '增强通识与世界理解': 'Enhance general knowledge and global understanding',
+            '获得专业技能与学历': 'Acquire professional skills and qualifications',
+            '名校背景优势': 'Advantages of prestigious school background',
+            '高薪工作与生活水平提升': 'Higher salary and improved living standards',
+            '培养想象力与创造力': 'Cultivate imagination and creativity',
+            '逻辑思维': 'Logical thinking',
+            '多角度分析问题': 'Analyze problems from multiple perspectives',
+            '学习行为准则': 'Learn codes of conduct',
+            '培养责任感': 'Cultivate responsibility',
+            '校规约束不良行为': 'School rules restrain misconduct',
+            '寓言故事教导美德': 'Fables teach virtues',
+            '课堂传授良好举止': 'Classroom teaches good manners',
+            '不打断他人、礼貌表达': 'Do not interrupt others, polite expression',
+            '人际交往技巧': 'Interpersonal skills',
+            '有效合作': 'Effective cooperation',
+            '换位思考': 'Empathy',
+            '职场人脉建立': 'Build professional networks',
+            '筛选有用信息': 'Filter useful information',
+            '快速理解与利用': 'Quick comprehension and application',
+            '高效解决': 'Efficient resolution',
+            '基本清洁与维修': 'Basic cleaning and maintenance',
+            '实现独立': 'Achieve independence',
+            '提高效率': 'Improve efficiency',
+            '平衡工作与生活': 'Balance work and life',
+            '规律运动增强体质': 'Regular exercise strengthens body',
+            '预防疾病': 'Prevent diseases',
+            '燃烧卡路里': 'Burn calories',
+            '提高身体机能': 'Improve physical function',
+            '释放内啡肽和多巴胺': 'Release endorphins and dopamine',
+            '缓解压力': 'Relieve stress',
+            '培养积极生活态度': 'Cultivate positive attitude towards life',
+            '减少误解与冲突': 'Reduce misunderstandings and conflicts',
+            '开阔视野与创新思维': 'Broaden horizons and innovative thinking',
+            '培养同理心': 'Cultivate empathy',
+            '保护文化多样性': 'Protect cultural diversity',
+            '增强民族归属感': 'Strengthen national identity',
+            '促进经济与旅游': 'Boost economy and tourism',
+            '丰富文化生活': 'Enrich cultural life',
+            '地标与经济贡献': 'Landmarks and economic contribution',
+            '文化传承': 'Cultural heritage',
+            '第一手多感官体验': 'First-hand multi-sensory experience',
+            '信息真实性': 'Authenticity of information',
+            '以史为鉴 (避免重蹈覆辙)': 'Learn from history (avoid repeating mistakes)',
+            '增强民族认同': 'Enhance national identity',
+            '纠正刻板印象': 'Correct stereotypes',
+            '真实了解他国': 'Truly understand other countries',
+            '减少冲突': 'Reduce conflicts',
+            '基础设施差异': 'Infrastructure differences',
+            '就业与生活水平': 'Employment and living standards',
+            '生活节奏': 'Pace of life',
+            '人际关系与性格': 'Interpersonal relationships and personality',
+            '环境恶化': 'Environmental degradation',
+            '住房危机': 'Housing crisis',
+            '交通拥堵': 'Traffic congestion',
+            '犯罪率上升': 'Rising crime rate',
+            '社区凝聚力下降': 'Decline in community cohesion',
+            '发展乡村经济': 'Develop rural economy',
+            '城市扩张与基建投入': 'Urban expansion and infrastructure investment',
+            '快节奏与竞争激烈': 'Fast pace and intense competition',
+            '难以平衡生活': 'Difficulty balancing life',
+            '忽视小确幸': 'Neglect small pleasures',
+            '科技导致的信息轰炸': 'Information overload caused by technology',
+            '教育、医疗、交通、住房': 'Education, healthcare, transportation, housing',
+            '教育提高就业': 'Education improves employment',
+            '医疗促进稳定': 'Healthcare promotes stability',
+            '交通提高效率': 'Transportation improves efficiency',
+            '财富再分配': 'Wealth redistribution',
+            '规范行为 (烟酒重税)': 'Regulate behavior (heavy taxes on tobacco and alcohol)',
+            '提供经济激励': 'Provide economic incentives',
+            '投资特定行业': 'Invest in specific industries',
+            '规范公民行为': 'Regulate citizen behavior',
+            '震慑不良行为': 'Deter bad behavior',
+            '维护社会稳定': 'Maintain social stability',
+            '提高环保意识': 'Raise environmental awareness',
+            '减轻污染': 'Reduce pollution',
+            '威胁经济发展': 'Threaten economic development',
+            '缺乏创新活力': 'Lack of innovation vitality',
+            '医疗系统压力': 'Pressure on healthcare system',
+            '养老金负担': 'Pension burden',
+            '工作节奏慢': 'Slow work pace',
+            '技术适应难': 'Difficulty adapting to technology',
+            '健康状况改善': 'Improved health conditions',
+            '经验与智慧 (担任顾问)': 'Experience and wisdom (serve as advisors)',
+            '性格成熟稳重': 'Mature and steady personality',
+            '鼓励延迟退休': 'Encourage delayed retirement',
+            '鼓励储蓄与养老金计划': 'Encourage savings and pension plans',
+            '降低照顾成本': 'Reduce care costs',
+            '具备同情心': 'Possess compassion',
+            '适合护理与早教': 'Suitable for nursing and early education',
+            '多样化劳动力': 'Diverse workforce',
+            '提供不同观点': 'Provide different perspectives',
+            '服务更广人群': 'Serve a wider population',
+            '展示能力': 'Demonstrate ability',
+            '缩小收入差距': 'Narrow income gap',
+            '缺乏尊重': 'Lack of respect',
+            '晋升困难': 'Difficulty in promotion',
+            '担心产假': 'Concerns about maternity leave',
+            '家庭事务牵绊': 'Family responsibilities',
+            '无收入来源': 'No source of income',
+            '为谋生犯罪': 'Commit crimes for survival',
+            '心生不满': 'Feel discontent',
+            '宣泄愤怒': 'Vent anger',
+            '未学习行为规范': 'Not learned behavioral norms',
+            '不良行为演变为犯罪': 'Bad behavior evolves into crime',
+            '视暴力为解决方式': 'See violence as a solution',
+            '忽略后果': 'Ignore consequences',
+            '震慑作用': 'Deterrent effect',
+            '失去自由恐惧': 'Fear of losing freedom',
+            '提升技能': 'Improve skills',
+            '教授行为规范': 'Teach behavioral norms',
+            '增加就业机会': 'Increase employment opportunities',
+            '防止再犯': 'Prevent reoffending',
+            '监禁 (隔离社会)': 'Imprisonment (isolate from society)',
+            '教育培训 (融入社会)': 'Education and training (reintegrate into society)',
+            '社区服务 (做贡献)': 'Community service (make contributions)'
+        };
+        const children = phrases.map(phrase => ({
+            t: phrase.trim(),
+            e: map[phrase.trim()] || `[Translate: ${phrase.trim()}]`,
+            _isAutoSplit: true
+        }));
+        const newNode = { ...node };
+        delete newNode.detail;
+        newNode.children = children;
+        return newNode;
+    }
+
+    function expandDetailsInTree(nodes) {
+        if (!nodes) return nodes;
+        return nodes.map(node => {
+            let processed = node;
+            if (node.detail && !node.children) {
+                processed = splitDetailIntoNodes(node);
+            }
+            if (processed.children) {
+                processed.children = expandDetailsInTree(processed.children);
+            }
+            return processed;
+        });
+    }
+
+    const staticData = rawStaticData.map(topic => ({
+        ...topic,
+        content: expandDetailsInTree(topic.content)
+    }));
+
+    // ------------------------------------------------------------
+    // 2. 状态管理 (增加当前话题索引)
+    // ------------------------------------------------------------
+    let allData = [];
+    let currentTopicIndex = 0;
+    const STORAGE_KEY = 'mindmap_user_notes_v1';
+
+    function initData() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                allData = JSON.parse(JSON.stringify(staticData));
+                parsed.forEach((topic, tIndex) => {
+                    if (allData[tIndex] && topic.userNotes) {
+                        topic.userNotes.forEach(note => {
+                            allData[tIndex].content.push({
+                                ...note,
+                                _isUserAdded: true
+                            });
+                        });
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading notes", e);
+                allData = JSON.parse(JSON.stringify(staticData));
+            }
+        } else {
+            allData = JSON.parse(JSON.stringify(staticData));
+        }
+    }
+
+    function saveUserNotes() {
+        const notesToSave = allData.map(topic => {
+            const userNotes = topic.content.filter(item => item._isUserAdded);
+            const cleanNotes = userNotes.map(({_isUserAdded, ...rest}) => rest);
+            return { id: topic.id, userNotes: cleanNotes };
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(notesToSave));
+    }
+
+    function addNote(topicIndex, cn, en, detail) {
+        if (!cn.trim()) return alert("请输入中文内容");
+        const newNode = {
+            t: cn,
+            e: en,
+            detail: detail,
+            _isUserAdded: true
+        };
+        allData[topicIndex].content.push(newNode);
+        saveUserNotes();
+        renderCurrentTopic(searchInput.value.trim());
+    }
+
+    function deleteNote(topicIndex, nodeIndex) {
+        if(!confirm("确定删除这条笔记吗？")) return;
+        allData[topicIndex].content.splice(nodeIndex, 1);
+        saveUserNotes();
+        renderCurrentTopic(searchInput.value.trim());
+    }
+
+    // ------------------------------------------------------------
+    // 3. 渲染函数：只渲染指定索引的话题
+    // ------------------------------------------------------------
+    const contentArea = document.getElementById('contentArea');
+    const searchInput = document.getElementById('searchInput');
+    const noResult = document.getElementById('noResult');
+    const topicNav = document.getElementById('topicNav');
+
+    function renderNav(activeIndex) {
+        topicNav.innerHTML = '';
+        allData.forEach((topic, idx) => {
+            const btn = document.createElement('button');
+            btn.className = `topic-tab ${idx === activeIndex ? 'active' : ''}`;
+            let shortTitle = topic.title.replace(/^\d+\.\s*/, '').split('(')[0].trim();
+            btn.textContent = shortTitle;
+            btn.onclick = () => {
+                currentTopicIndex = idx;
+                searchInput.value = '';
+                renderCurrentTopic('');
+            };
+            topicNav.appendChild(btn);
+        });
+    }
+
+    function renderCurrentTopic(searchTerm = '') {
+        if (!allData.length) return;
+        const topic = allData[currentTopicIndex];
+        const tIndex = currentTopicIndex;
+        renderNav(currentTopicIndex);
+
+        let hasMatch = false;
+
+        function isMatch(node, term) {
+            if (!term) return true;
+            const text = `${node.t} ${node.e||''} ${node.detail||''}`.toLowerCase();
+            return text.includes(term.toLowerCase());
+        }
+        function hasMatchingChild(nodes, term) {
+            return nodes.some(child => {
+                if (isMatch(child, term)) return true;
+                if (child.children) return hasMatchingChild(child.children, term);
+                return false;
+            });
+        }
+
+        function buildBranch(node, nodeIdx) {
+            const selfMatch = isMatch(node, searchTerm);
+            const childHasMatch = node.children ? hasMatchingChild(node.children, searchTerm) : false;
+            if (searchTerm && !selfMatch && !childHasMatch) return null;
+            if (!searchTerm || selfMatch || childHasMatch) hasMatch = true;
+
+            const branchDiv = document.createElement('div');
+            branchDiv.className = 'branch-card';
+
+            // 根据索引分配颜色类 (循环使用0-5)
+            const colorIndex = nodeIdx % 6;
+            branchDiv.classList.add(`branch-color-${colorIndex}`);
+
+            if (node._isUserAdded) branchDiv.classList.add('user-added');
+
+            let html = `<div class="node-row">
+                <span class="node-text">
+                    <strong>${highlight(node.t, searchTerm)}</strong>
+                    ${node.e ? `<span class="en-text">${highlight(node.e, searchTerm)}</span>` : ''}
+                </span>`;
+
+            if (node._isUserAdded) {
+                html += `<button class="delete-btn" onclick="deleteNote(${tIndex}, ${nodeIdx})">🗑️ 删除</button>`;
+            }
+            html += `</div>`;
+
+            if (node.detail) {
+                html += `<span class="detail-text">${highlight(node.detail, searchTerm)}</span>`;
+            }
+            branchDiv.innerHTML = html;
+
+            if (node.children && node.children.length > 0) {
+                const childUl = document.createElement('ul');
+                childUl.className = 'tree';
+                buildTree(node.children, childUl, tIndex, searchTerm);
+                branchDiv.appendChild(childUl);
+            }
+            return branchDiv;
+        }
+
+        function buildTree(nodes, parentUl, topicIndex, searchTerm) {
+            nodes.forEach((node) => {
+                const selfMatch = isMatch(node, searchTerm);
+                const childHasMatch = node.children ? hasMatchingChild(node.children, searchTerm) : false;
+                if (searchTerm && !selfMatch && !childHasMatch) return;
+
+                const li = document.createElement('li');
+                if (node._isUserAdded) li.classList.add('user-added');
+
+                let html = `<div class="node-row">
+                    <span class="node-text">
+                        <strong>${highlight(node.t, searchTerm)}</strong>
+                        ${node.e ? `<span class="en-text">${highlight(node.e, searchTerm)}</span>` : ''}
+                    </span>`;
+                html += `</div>`;
+
+                if (node.detail) {
+                    html += `<span class="detail-text">${highlight(node.detail, searchTerm)}</span>`;
+                }
+                li.innerHTML = html;
+
+                if (node.children) {
+                    const childUl = document.createElement('ul');
+                    childUl.className = 'tree';
+                    buildTree(node.children, childUl, topicIndex, searchTerm);
+                    if (childUl.children.length > 0) li.appendChild(childUl);
+                }
+                parentUl.appendChild(li);
+            });
+        }
+
+        const card = document.createElement('div');
+        card.className = 'topic-card';
+
+        const header = document.createElement('div');
+        header.className = 'topic-header';
+        header.textContent = topic.title;
+        card.appendChild(header);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'topic-content';
+
+        const branchesContainer = document.createElement('div');
+        branchesContainer.className = 'topic-branches';
+
+        topic.content.forEach((node, idx) => {
+            const branch = buildBranch(node, idx);
+            if (branch) branchesContainer.appendChild(branch);
+        });
+
+        contentDiv.appendChild(branchesContainer);
+
+        const addSection = document.createElement('div');
+        addSection.className = 'add-section';
+        addSection.innerHTML = `
+            <button class="add-btn" onclick="toggleInput(${tIndex})">+ 添加新论点</button>
+            <div id="input-group-${tIndex}" style="display:none; width:100%; gap:10px; flex-wrap:wrap;">
+                <input type="text" id="input-cn-${tIndex}" class="input-mini input-cn" placeholder="中文论点">
+                <input type="text" id="input-en-${tIndex}" class="input-mini input-en" placeholder="English Point">
+                <input type="text" id="input-detail-${tIndex}" class="input-mini input-detail" placeholder="细节/例子 (可选)">
+                <button class="save-mini" onclick="addNote(${tIndex}, 
+                    document.getElementById('input-cn-${tIndex}').value, 
+                    document.getElementById('input-en-${tIndex}').value, 
+                    document.getElementById('input-detail-${tIndex}').value)">保存</button>
+            </div>
+        `;
+        contentDiv.appendChild(addSection);
+
+        card.appendChild(contentDiv);
+        contentArea.innerHTML = '';
+        contentArea.appendChild(card);
+
+        if (searchTerm && !hasMatch) {
+            noResult.style.display = 'block';
+        } else {
+            noResult.style.display = 'none';
+        }
+    }
+
+    function toggleInput(index) {
+        const group = document.getElementById(`input-group-${index}`);
+        if (group) {
+            group.style.display = group.style.display === 'none' ? 'flex' : 'none';
+            if(group.style.display === 'flex') document.getElementById(`input-cn-${index}`).focus();
+        }
+    }
+
+    function highlight(text, term) {
+        if (!term || !text) return text;
+        const regex = new RegExp(`(${term})`, 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    function performSearch(term) {
+        if (!term.trim()) {
+            renderCurrentTopic('');
+            return;
+        }
+        let firstMatchIndex = -1;
+        for (let i = 0; i < allData.length; i++) {
+            const topic = allData[i];
+            function nodeMatches(node) {
+                if (isNodeMatch(node, term)) return true;
+                if (node.children) {
+                    for (let child of node.children) {
+                        if (nodeMatches(child)) return true;
+                    }
+                }
+                return false;
+            }
+            function isNodeMatch(node, t) {
+                const text = `${node.t} ${node.e||''} ${node.detail||''}`.toLowerCase();
+                return text.includes(t.toLowerCase());
+            }
+            const found = topic.content.some(root => nodeMatches(root));
+            if (found) {
+                firstMatchIndex = i;
+                break;
+            }
+        }
+        if (firstMatchIndex !== -1) {
+            currentTopicIndex = firstMatchIndex;
+            renderCurrentTopic(term);
+        } else {
+            renderCurrentTopic(term);
+        }
+    }
+
+    function resetSearch() {
+        searchInput.value = '';
+        renderCurrentTopic('');
+    }
+
+    searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.trim();
+        performSearch(term);
+    });
+
+    // ------------------------------------------------------------
+    // 4. 导出功能 (与上一版相同)
+    // ------------------------------------------------------------
+    function exportWord() {
+        let fullHtml = '<html><head><meta charset="utf-8"><title>MindMap All Topics</title><style>';
+        fullHtml += 'body{font-family:Arial; padding:20px;} .topic-card{border:1px solid #000; margin-bottom:30px; padding:15px; border-radius:8px;}';
+        fullHtml += '.topic-branches{display:flex; flex-wrap:wrap; gap:16px;} .branch-card{border:1px solid #333; padding:12px; width:280px; margin:5px; background:#f9f9f9;}';
+        fullHtml += 'ul{list-style-type:none; padding-left:16px;} li{border:1px solid #ccc; margin:6px 0; padding:8px; border-radius:5px;}';
+        fullHtml += '.en-text{color:#555; font-style:italic;}</style></head><body>';
+
+        allData.forEach(topic => {
+            fullHtml += `<div class="topic-card"><h2>${topic.title}</h2>`;
+            fullHtml += '<div class="topic-branches">';
+            function buildNode(node) {
+                let str = `<div class="branch-card"><strong>${node.t}</strong>`;
+                if (node.e) str += `<div class="en-text">${node.e}</div>`;
+                if (node.detail) str += `<div>${node.detail}</div>`;
+                if (node.children) {
+                    str += '<ul>';
+                    node.children.forEach(child => {
+                        str += `<li>${buildNode(child)}</li>`;
+                    });
+                    str += '</ul>';
+                }
+                str += '</div>';
+                return str;
+            }
+            topic.content.forEach(root => {
+                fullHtml += buildNode(root);
+            });
+            fullHtml += '</div></div>';
+        });
+
+        fullHtml += '</body></html>';
+        const blob = new Blob([fullHtml], {type: 'application/msword'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'MindMap_All_Topics.doc';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportFullHTML() {
+        let htmlContent = document.documentElement.outerHTML;
+        const dataString = JSON.stringify(allData, null, 4);
+        const regex = /const staticData = \[[\s\S]*?\];/;
+        const replacement = `const staticData = ${dataString};`;
+        let cleanHtml = htmlContent.replace(regex, replacement);
+        const initFix = `
+        function initData() {
+            allData = JSON.parse(JSON.stringify(staticData)); 
+        }`;
+        const initRegex = /function initData\(\) \{[\s\S]*?\}/;
+        cleanHtml = cleanHtml.replace(initRegex, initFix);
+        const blob = new Blob([cleanHtml], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MindMap_Backup_${new Date().toISOString().slice(0,10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    window.addNote = addNote;
+    window.deleteNote = deleteNote;
+    window.toggleInput = toggleInput;
+    window.resetSearch = resetSearch;
+    window.exportWord = exportWord;
+    window.exportFullHTML = exportFullHTML;
+
+    initData();
+    renderNav(0);
+    renderCurrentTopic('');
+</script>
+
+</body>
+</html>
